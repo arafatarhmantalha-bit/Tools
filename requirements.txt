@@ -1,2 +1,5 @@
 python-telegram-bot==21.0
-yt-dlp
+pillow
+opencv-python-headless
+rembg
+numpy
