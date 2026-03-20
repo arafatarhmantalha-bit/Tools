@@ -9,7 +9,6 @@ bot = telebot.TeleBot(BOT_TOKEN)
 
 user_prefs = {}
 
-# Best realistic neural voices
 VOICES = {
     "bnbd_male":   "bn-BD-PradeepNeural",
     "bnbd_female": "bn-BD-NabanitaNeural",
@@ -23,21 +22,80 @@ VOICES = {
     "ur_female":   "ur-PK-UzmaNeural"
 }
 
+LANG_LABELS = {
+    "bnbd": "Bangla 🇧🇩 BD",
+    "bnin": "Bangla 🇮🇳 IN",
+    "en":   "English 🇺🇸",
+    "hi":   "Hindi 🇮🇳",
+    "ur":   "Urdu 🇵🇰"
+}
+
+GENDER_LABELS = {
+    "male":   "Male 🧔",
+    "female": "Female 👩"
+}
+
+MAX_CHARS = 1000
+
+def language_markup():
+    markup = types.InlineKeyboardMarkup(row_width=2)
+    btn1 = types.InlineKeyboardButton("Bangla 🇧🇩 BD", callback_data="lang_bnbd")
+    btn2 = types.InlineKeyboardButton("Bangla 🇮🇳 IN", callback_data="lang_bnin")
+    btn3 = types.InlineKeyboardButton("English 🇺🇸",   callback_data="lang_en")
+    btn4 = types.InlineKeyboardButton("Hindi 🇮🇳",     callback_data="lang_hi")
+    btn5 = types.InlineKeyboardButton("Urdu 🇵🇰",      callback_data="lang_ur")
+    markup.add(btn1, btn2, btn3, btn4, btn5)
+    return markup
+
 # /start or /help
 @bot.message_handler(commands=['start', 'help'])
 def start_cmd(message):
     try:
-        chat_id = message.chat.id
-        markup = types.InlineKeyboardMarkup(row_width=2)
-        btn1 = types.InlineKeyboardButton("Bangla 🇧🇩 BD", callback_data="lang_bnbd")
-        btn2 = types.InlineKeyboardButton("Bangla 🇮🇳 IN", callback_data="lang_bnin")
-        btn3 = types.InlineKeyboardButton("English 🇺🇸",   callback_data="lang_en")
-        btn4 = types.InlineKeyboardButton("Hindi 🇮🇳",     callback_data="lang_hi")
-        btn5 = types.InlineKeyboardButton("Urdu 🇵🇰",      callback_data="lang_ur")
-        markup.add(btn1, btn2, btn3, btn4, btn5)
-        bot.send_message(chat_id, "Write Your Script 🤌\n\nSelect Language:", reply_markup=markup)
+        bot.send_message(
+            message.chat.id,
+            "Write Your Script 🤌\n\nSelect Language:",
+            reply_markup=language_markup()
+        )
     except Exception as e:
         print(f"Start Error: {e}")
+
+# /change command
+@bot.message_handler(commands=['change'])
+def change_cmd(message):
+    try:
+        bot.send_message(
+            message.chat.id,
+            "🔄 Change Voice\n\nSelect Language:",
+            reply_markup=language_markup()
+        )
+    except Exception as e:
+        print(f"Change Error: {e}")
+
+# /myvoice command
+@bot.message_handler(commands=['myvoice'])
+def myvoice_cmd(message):
+    try:
+        chat_id = message.chat.id
+
+        if chat_id not in user_prefs or isinstance(user_prefs[chat_id], dict):
+            bot.reply_to(message, "⚠️ Tumi ekhono kono voice select koro nai.\n/start diye select koro.")
+            return
+
+        # Find current lang & gender from saved voice
+        current_voice = user_prefs[chat_id]
+        lang_key, gender_key = None, None
+        for key, val in VOICES.items():
+            if val == current_voice:
+                parts = key.rsplit("_", 1)
+                lang_key, gender_key = parts[0], parts[1]
+                break
+
+        bot.reply_to(
+            message,
+            f"🎙️ Current Voice:\n\n🌐 Language: {LANG_LABELS[lang_key]}\n👤 Gender: {GENDER_LABELS[gender_key]}"
+        )
+    except Exception as e:
+        print(f"MyVoice Error: {e}")
 
 # Callback — Language & Gender
 @bot.callback_query_handler(func=lambda call: True)
@@ -66,25 +124,19 @@ def callback_query(call):
             parts = data.split("gender_")[1].rsplit("_", 1)
             lang, gender = parts[0], parts[1]
             voice_key = f"{lang}_{gender}"
-
             user_prefs[chat_id] = VOICES[voice_key]
 
-            lang_labels = {
-                "bnbd": "Bangla 🇧🇩 BD",
-                "bnin": "Bangla 🇮🇳 IN",
-                "en":   "English 🇺🇸",
-                "hi":   "Hindi 🇮🇳",
-                "ur":   "Urdu 🇵🇰"
-            }
-            gender_labels = {
-                "male":   "Male 🧔",
-                "female": "Female 👩"
-            }
-
             bot.edit_message_text(
-                f"✅ Settings Saved!\n\n🌐 Language: {lang_labels[lang]}\n🎙️ Gender: {gender_labels[gender]}\n\nNow send me any text to convert.",
+                f"✅ Settings Saved!\n\n🌐 Language: {LANG_LABELS[lang]}\n🎙️ Gender: {GENDER_LABELS[gender]}\n\nNow send me any text to convert.",
                 chat_id,
                 call.message.message_id
+            )
+
+        elif data == "change_voice":
+            bot.send_message(
+                chat_id,
+                "🔄 Change Voice\n\nSelect Language:",
+                reply_markup=language_markup()
             )
 
     except Exception as e:
@@ -98,6 +150,11 @@ def handle_text(message):
 
     if chat_id not in user_prefs or isinstance(user_prefs[chat_id], dict):
         bot.reply_to(message, "Age /start likhe Language ar Gender select koro bro!")
+        return
+
+    # Character limit check
+    if len(text) > MAX_CHARS:
+        bot.reply_to(message, f"⚠️ Text onek boro! Maximum {MAX_CHARS} character er modhe rakho.")
         return
 
     selected_voice = user_prefs[chat_id]
@@ -115,8 +172,17 @@ def handle_text(message):
         loop.run_until_complete(create_audio())
         loop.close()
 
+        # Change voice button after audio
+        markup = types.InlineKeyboardMarkup()
+        markup.add(types.InlineKeyboardButton("🔄 Change Voice", callback_data="change_voice"))
+
         with open(file_name, 'rb') as audio:
-            bot.send_audio(chat_id, audio, caption="🎧 𝘾𝙧𝙚𝙖𝙩𝙚𝙙 𝘽𝙮 | 𝙎𝙖𝙖𝙁𝙚 🖤")
+            bot.send_audio(
+                chat_id,
+                audio,
+                caption="🎧 𝘾𝙧𝙚𝙖𝙩𝙚𝙙 𝘽𝙮 | 𝙎𝙖𝙖𝙁𝙚 🖤",
+                reply_markup=markup
+            )
 
         try:
             bot.delete_message(chat_id, temp_msg.message_id)
