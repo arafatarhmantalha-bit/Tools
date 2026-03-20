@@ -26,7 +26,7 @@ def text_to_speech(message):
         return
 
     # Bangla voice best (BD er jonno) → 'bn'. English chaiলে 'en' koro
-    tts = gTTS(text=user_text, lang='bn', slow=False)
+    tts = gTTS(text=user_text, lang='en', slow=False)
 
     # Memory te MP3 banai (kono file save hoy na)
     mp3_fp = io.BytesIO()
