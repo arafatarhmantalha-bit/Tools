@@ -56,7 +56,7 @@ SPEED_RATES = {
     "fast":   "+20%"
 }
 
-MAX_CHARS = 1000
+MAX_CHARS = 10000
 
 
 def language_markup():
