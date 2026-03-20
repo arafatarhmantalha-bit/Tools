@@ -2,7 +2,7 @@ import os
 import telebot
 from gtts import gTTS
 
-# Railway theke token auto nibe
+# Railway variables theke token nibe
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -19,10 +19,10 @@ def generate_speech(message):
 
     try:
         # User ke wait korte bola
-        temp_msg = bot.send_message(chat_id, "⏳ Generating audio...")
+        temp_msg = bot.send_message(chat_id, "⏳ আপনার অডিও তৈরি হচ্ছে...")
 
-        # Text ke audio te convert kora (English e)
-        tts = gTTS(text=user_text, lang='en')
+        # ekhane lang='bn' deya hoyese jate Bangla speech hoy
+        tts = gTTS(text=user_text, lang='bn') 
         file_name = f"audio_{chat_id}.mp3"
         tts.save(file_name)
 
@@ -34,13 +34,13 @@ def generate_speech(message):
                 caption="𝘾𝙧𝙚𝙖𝙩𝙚𝙙 𝘽𝙮 | 𝙎𝙖𝙖𝙁𝙚 🖤"
             )
         
-        # Temp message delete kora and mp3 file delete kora (storage bachanar jonno)
+        # Temp message delete kora and local file remove kora
         bot.delete_message(chat_id, temp_msg.message_id)
         os.remove(file_name)
 
     except Exception as e:
-        bot.send_message(chat_id, "Sorry bro, ekta problem hoyese. Abar try koro.")
+        bot.send_message(chat_id, "দুঃখিত, কোনো সমস্যা হয়েছে। আবার চেষ্টা করুন।")
         print(f"Error: {e}")
 
-print("Bot is successfully running...!")
+print("Bangla TTS Bot is running...")
 bot.infinity_polling()
