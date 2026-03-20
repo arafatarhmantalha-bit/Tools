@@ -15,6 +15,8 @@ user_prefs = {}
 VOICES = {
     "bn_male": "bn-BD-PradeepNeural",
     "bn_female": "bn-BD-NabanitaNeural",
+    "bn_in_male": "bn-IN-BashkarNeural",
+    "bn_in_female": "bn-IN-TanishaaNeural",
     "en_male": "en-US-GuyNeural",
     "en_female": "en-US-JennyNeural"
 }
