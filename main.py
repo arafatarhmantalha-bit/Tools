@@ -9,29 +9,34 @@ bot = telebot.TeleBot(BOT_TOKEN)
 
 user_prefs = {}
 
+# Best realistic neural voices
 VOICES = {
-    "bn_male": "bn-IN-BashkarNeural",
-    "bn_female": "bn-IN-TanishaaNeural",
-    "en_male": "en-US-GuyNeural",
-    "en_female": "en-US-JennyNeural"
+    "bn_male":   "bn-IN-BashkarNeural",      # Bangla Male
+    "bn_female": "bn-IN-TanishaaNeural",     # Bangla Female
+    "en_male":   "en-US-GuyNeural",          # English Male
+    "en_female": "en-US-JennyNeural",        # English Female
+    "hi_male":   "hi-IN-MadhurNeural",       # Hindi Male (deep & natural)
+    "hi_female": "hi-IN-SwaraNeural",        # Hindi Female (very smooth)
+    "ur_male":   "ur-PK-AsadNeural",         # Urdu Male (natural tone)
+    "ur_female": "ur-PK-UzmaNeural"          # Urdu Female (clear & warm)
 }
 
+# /start or /help
 @bot.message_handler(commands=['start', 'help'])
 def start_cmd(message):
     try:
         chat_id = message.chat.id
         markup = types.InlineKeyboardMarkup(row_width=2)
-        btn1 = types.InlineKeyboardButton("1. Bangla 🇧🇩", callback_data="lang_bn")
-        btn2 = types.InlineKeyboardButton("2. English 🇺🇸", callback_data="lang_en")
-        markup.add(btn1, btn2)
-        bot.send_message(
-            chat_id,
-            "Write Your Script 🤌\n\nSelect Language:",
-            reply_markup=markup
-        )
+        btn1 = types.InlineKeyboardButton("Bangla 🇧🇩",  callback_data="lang_bn")
+        btn2 = types.InlineKeyboardButton("English 🇺🇸", callback_data="lang_en")
+        btn3 = types.InlineKeyboardButton("Hindi 🇮🇳",   callback_data="lang_hi")
+        btn4 = types.InlineKeyboardButton("Urdu 🇵🇰",    callback_data="lang_ur")
+        markup.add(btn1, btn2, btn3, btn4)
+        bot.send_message(chat_id, "Write Your Script 🤌\n\nSelect Language:", reply_markup=markup)
     except Exception as e:
         print(f"Start Error: {e}")
 
+# Callback — Language & Gender
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
     chat_id = call.message.chat.id
@@ -41,22 +46,47 @@ def callback_query(call):
         if data.startswith("lang_"):
             lang = data.split("_")[1]
             user_prefs[chat_id] = {"lang": lang}
+
             markup = types.InlineKeyboardMarkup(row_width=2)
-            g_btn1 = types.InlineKeyboardButton("Male 🧔", callback_data=f"gender_{lang}_male")
+            g_btn1 = types.InlineKeyboardButton("Male 🧔",   callback_data=f"gender_{lang}_male")
             g_btn2 = types.InlineKeyboardButton("Female 👩", callback_data=f"gender_{lang}_female")
             markup.add(g_btn1, g_btn2)
-            bot.edit_message_text("Select Gender:", chat_id, call.message.message_id, reply_markup=markup)
+
+            bot.edit_message_text(
+                "Select Gender:",
+                chat_id,
+                call.message.message_id,
+                reply_markup=markup
+            )
 
         elif data.startswith("gender_"):
             parts = data.split("_")
             lang, gender = parts[1], parts[2]
             voice_key = f"{lang}_{gender}"
+
             user_prefs[chat_id] = VOICES[voice_key]
-            bot.edit_message_text("✅ Settings Saved! Now send me any text to convert.", chat_id, call.message.message_id)
+
+            lang_labels = {
+                "bn": "Bangla 🇧🇩",
+                "en": "English 🇺🇸",
+                "hi": "Hindi 🇮🇳",
+                "ur": "Urdu 🇵🇰"
+            }
+            gender_labels = {
+                "male": "Male 🧔",
+                "female": "Female 👩"
+            }
+
+            bot.edit_message_text(
+                f"✅ Settings Saved!\n\n🌐 Language: {lang_labels[lang]}\n🎙️ Gender: {gender_labels[gender]}\n\nNow send me any text to convert.",
+                chat_id,
+                call.message.message_id
+            )
 
     except Exception as e:
         print(f"Callback Error: {e}")
 
+# Text → TTS
 @bot.message_handler(func=lambda message: True)
 def handle_text(message):
     chat_id = message.chat.id
@@ -84,7 +114,6 @@ def handle_text(message):
         with open(file_name, 'rb') as audio:
             bot.send_audio(chat_id, audio, caption="🎧 𝘾𝙧𝙚𝙖𝙩𝙚𝙙 𝘽𝙮 | 𝙎𝙖𝙖𝙁𝙚 🖤")
 
-        # 🧱 Safe delete fix:
         try:
             bot.delete_message(chat_id, temp_msg.message_id)
         except Exception as e:
