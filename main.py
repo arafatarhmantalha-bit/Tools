@@ -11,14 +11,12 @@ bot = telebot.TeleBot(BOT_TOKEN)
 # User preference memory
 user_prefs = {}
 
-# Voice mapping
+# Voice mapping (Best realistic voices)
 VOICES = {
-    "bn_male": "bn-BD-PradeepNeural",
-    "bn_female": "bn-BD-NabanitaNeural",
-    "bn_in_male": "bn-IN-BashkarNeural",
-    "bn_in_female": "bn-IN-TanishaaNeural",
-    "en_male": "en-US-GuyNeural",
-    "en_female": "en-US-JennyNeural"
+    "bn_male": "bn-IN-BashkarNeural",      # Smooth, natural male Bangla (India region)
+    "bn_female": "bn-IN-TanishaaNeural",   # Best natural female Bangla voice
+    "en_male": "en-US-GuyNeural",          # Natural deep male English
+    "en_female": "en-US-JennyNeural"       # Popular realistic female English
 }
 
 # /start command
@@ -29,7 +27,6 @@ def start_cmd(message):
         
         # Language Selection
         markup = types.InlineKeyboardMarkup(row_width=2)
-        # Ekhane 'callback_data' use kora hoyeche fixed
         btn1 = types.InlineKeyboardButton("1. Bangla 🇧🇩", callback_data="lang_bn")
         btn2 = types.InlineKeyboardButton("2. English 🇺🇸", callback_data="lang_en")
         markup.add(btn1, btn2)
@@ -62,7 +59,7 @@ def callback_query(call):
             lang, gender = parts[1], parts[2]
             voice_key = f"{lang}_{gender}"
             
-            # Final voice selection save
+            # Save final voice choice
             user_prefs[chat_id] = VOICES[voice_key]
             
             bot.edit_message_text(f"✅ Settings Saved! Now send me any text to convert.", chat_id, call.message.message_id)
@@ -91,18 +88,19 @@ def handle_text(message):
             communicate = Communicate(text, selected_voice)
             await communicate.save(file_name)
 
-        asyncio.run(create_audio())
+        # Proper async handling
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(create_audio())
 
         with open(file_name, 'rb') as audio:
-            bot.send_audio(chat_id, audio, caption="𝘾𝙧𝙚𝙖𝙩𝙚𝙙 𝘽𝙮 | 𝙎𝙖𝙖𝙁𝙚 🖤")
+            bot.send_audio(chat_id, audio, caption="🎧 𝘾𝙧𝙚𝙖𝙩𝙚𝙙 𝘽𝙮 | 𝙎𝙖𝙖𝙁𝙚 🖤")
 
         bot.delete_message(chat_id, temp_msg.message_id)
         if os.path.exists(file_name):
             os.remove(file_name)
 
     except Exception as e:
-        bot.send_message(chat_id, "Error hoyese, abar try koro.")
-        print(f"Processing Error: {e}")
-
-print("Bot is starting...")
-bot.infinity_polling()
+        print(f"TTS Error: {e}")
+        bot.send_message(chat_id, "😔 Error hoyese, abar try koro bro.")
+            
