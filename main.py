@@ -11,14 +11,16 @@ user_prefs = {}
 
 # Best realistic neural voices
 VOICES = {
-    "bn_male":   "bn-IN-BashkarNeural",      # Bangla Male
-    "bn_female": "bn-IN-TanishaaNeural",     # Bangla Female
-    "en_male":   "en-US-GuyNeural",          # English Male
-    "en_female": "en-US-JennyNeural",        # English Female
-    "hi_male":   "hi-IN-MadhurNeural",       # Hindi Male (deep & natural)
-    "hi_female": "hi-IN-SwaraNeural",        # Hindi Female (very smooth)
-    "ur_male":   "ur-PK-AsadNeural",         # Urdu Male (natural tone)
-    "ur_female": "ur-PK-UzmaNeural"          # Urdu Female (clear & warm)
+    "bnbd_male":   "bn-BD-PradeepNeural",
+    "bnbd_female": "bn-BD-NabanitaNeural",
+    "bnin_male":   "bn-IN-BashkarNeural",
+    "bnin_female": "bn-IN-TanishaaNeural",
+    "en_male":     "en-US-GuyNeural",
+    "en_female":   "en-US-JennyNeural",
+    "hi_male":     "hi-IN-MadhurNeural",
+    "hi_female":   "hi-IN-SwaraNeural",
+    "ur_male":     "ur-PK-AsadNeural",
+    "ur_female":   "ur-PK-UzmaNeural"
 }
 
 # /start or /help
@@ -27,11 +29,12 @@ def start_cmd(message):
     try:
         chat_id = message.chat.id
         markup = types.InlineKeyboardMarkup(row_width=2)
-        btn1 = types.InlineKeyboardButton("Bangla 🇧🇩",  callback_data="lang_bn")
-        btn2 = types.InlineKeyboardButton("English 🇺🇸", callback_data="lang_en")
-        btn3 = types.InlineKeyboardButton("Hindi 🇮🇳",   callback_data="lang_hi")
-        btn4 = types.InlineKeyboardButton("Urdu 🇵🇰",    callback_data="lang_ur")
-        markup.add(btn1, btn2, btn3, btn4)
+        btn1 = types.InlineKeyboardButton("Bangla 🇧🇩 BD", callback_data="lang_bnbd")
+        btn2 = types.InlineKeyboardButton("Bangla 🇮🇳 IN", callback_data="lang_bnin")
+        btn3 = types.InlineKeyboardButton("English 🇺🇸",   callback_data="lang_en")
+        btn4 = types.InlineKeyboardButton("Hindi 🇮🇳",     callback_data="lang_hi")
+        btn5 = types.InlineKeyboardButton("Urdu 🇵🇰",      callback_data="lang_ur")
+        markup.add(btn1, btn2, btn3, btn4, btn5)
         bot.send_message(chat_id, "Write Your Script 🤌\n\nSelect Language:", reply_markup=markup)
     except Exception as e:
         print(f"Start Error: {e}")
@@ -44,7 +47,7 @@ def callback_query(call):
 
     try:
         if data.startswith("lang_"):
-            lang = data.split("_")[1]
+            lang = data.split("lang_")[1]
             user_prefs[chat_id] = {"lang": lang}
 
             markup = types.InlineKeyboardMarkup(row_width=2)
@@ -60,20 +63,21 @@ def callback_query(call):
             )
 
         elif data.startswith("gender_"):
-            parts = data.split("_")
-            lang, gender = parts[1], parts[2]
+            parts = data.split("gender_")[1].rsplit("_", 1)
+            lang, gender = parts[0], parts[1]
             voice_key = f"{lang}_{gender}"
 
             user_prefs[chat_id] = VOICES[voice_key]
 
             lang_labels = {
-                "bn": "Bangla 🇧🇩",
-                "en": "English 🇺🇸",
-                "hi": "Hindi 🇮🇳",
-                "ur": "Urdu 🇵🇰"
+                "bnbd": "Bangla 🇧🇩 BD",
+                "bnin": "Bangla 🇮🇳 IN",
+                "en":   "English 🇺🇸",
+                "hi":   "Hindi 🇮🇳",
+                "ur":   "Urdu 🇵🇰"
             }
             gender_labels = {
-                "male": "Male 🧔",
+                "male":   "Male 🧔",
                 "female": "Female 👩"
             }
 
